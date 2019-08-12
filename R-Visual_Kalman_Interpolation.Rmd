@@ -1,0 +1,171 @@
+---
+title: "R-Visualiz_Kalman_Interpolated"
+author: "Marco Milli"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r libs}
+library(tidyr)
+library(plyr)
+library(stringr)
+library(lubridate)
+# library(tidyverse)
+#library(clifro)
+library(MASS)
+library(zoo)
+#library(viridis)
+library(broom)
+#library(plotly)
+library(knitr)
+#library(Hmisc)
+#library(GGally)
+library(imputeTS)
+#library(openair)
+library(glue)
+#library(aTSA)
+#theme_set(theme_minimal())
+library(readr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r Load raw data}
+
+datapath ='../01_data'
+
+df <- read_csv(paste(datapath,'weather_data_for_interpolation.csv', sep='/'))
+df
+```
+```{r dimension of raw data}
+cat('Dimension of raw data:', dim(df))
+```
+
+```{r NaN columns}
+colSums(is.na(df))
+```
+
+```{r NaN rows per column}
+wind_dir_nan_rows <- which(is.na(df$Wind_dir))
+wind_speed_nan_rows <- which(is.na(df$Wind_speed))
+wind_max_nan_rows <- which(is.na(df$Wind_max))
+qff_nan_rows <- which(is.na(df$QFF))
+qnh_nan_rows <- which(is.na(df$QNH))
+qfe_nan_rows <- which(is.na(df$QFE))
+hum_nan_rows <- which(is.na(df$Hum))
+air_temp_nan_rows <- which(is.na(df$Air_temp))
+```
+
+
+```{r}
+cat('Approx range of missing wind dir values', min(wind_dir_nan_rows), max(wind_dir_nan_rows), '\n')
+cat('Approx range of missing wind speed values', min(wind_speed_nan_rows), max(wind_speed_nan_rows), '\n')
+cat('Approx range of missing wind max values', min(wind_max_nan_rows), max(wind_max_nan_rows), '\n')
+cat('Approx range of missing air temp values', min(air_temp_nan_rows), max(air_temp_nan_rows), '\n')
+cat('Approx range of missing humidity values', min(hum_nan_rows), max(hum_nan_rows), '\n')
+cat('Approx range of missing QFF values', min(qff_nan_rows), max(qff_nan_rows), '\n')
+cat('Approx range of missing QFE values', min(qfe_nan_rows), max(qfe_nan_rows), '\n')
+cat('Approx range of missing QNH values', min(qnh_nan_rows), max(qnh_nan_rows), '\n')
+```
+
+```{r NaNs in table}
+df[76650:77000,]
+
+```
+
+```{r}
+df %>% 
+  ggplot(aes(x=Station,y=Wind_dir, fill=Station)) +
+  geom_boxplot() +  
+  ylab("Wind Direction")+ 
+  geom_jitter(width=0.01,alpha=0.001) +
+  theme_bw(base_size = 10)
+
+```
+
+```{r}
+df_interpolated <- read_csv(paste(datapath,'weather_data_with_interpolation.csv', sep='/')) 
+print(head(df_interpolated))
+```
+
+```{r}
+dim(df_interpolated)
+df_interpolated[76800:90000,]
+
+```
+
+```{r}
+df_interpolated %>% 
+  ggplot(aes(x=Station,y=Wind_dir_interp, fill=Station)) +
+  geom_boxplot() +  
+  ylab("Interpolated Wind Direction")+ 
+  geom_jitter(width=0.01,alpha=0.001) +
+  theme_bw(base_size = 10)
+```
+
+
+
+```{r}
+df_interpolated %>% 
+  ggplot(aes(x=Station,y=Wind_dir_interp)) +
+  geom_boxplot(alpha = 0) +  
+  ylab("Interpolated Wind Direction")+ 
+  geom_jitter(width=0.01, alpha=0.1, color = "blue") 
+```
+
+
+
+```{r}
+ggplot(data = df_interpolated, mapping = aes(x = Station, y = Wind_max_interp)) +
+    geom_boxplot(alpha = 0) +  
+    ylab("Interpolated Wind Max") +
+    geom_jitter(alpha = 0.3, color = "tomato", width = 0.01)
+
+```
+
+
+```{r}
+ggplot(data = df, mapping = aes(x = Station, y = Wind_max)) +
+    geom_boxplot(alpha = 0) +  
+    ylab("Interpolated Wind Max") +
+    geom_jitter(alpha = 0.3, color = "green", width = 0.01)
+
+```
+<h2>The smoothing effect of the the Kalman filter is not obvious in the box plots</h2>
+```{r}
+# Basic line plot
+ggplot(df_interpolated[76650:90000,], aes(x=datetime, y=Wind_dir_interp)) + 
+  geom_line(size=0.1, color = "red") +
+  xlab("Date Time") +
+  ylab("Wind Direction") +
+  geom_line(data = df[76650:90000,], color = "blue", mapping=aes(y=Wind_dir), size=0.1,) 
+  
+
+```
+```{r}
+df[76650:77000,]  %>% 
+  ggplot(aes(x=datetime,y=Wind_dir)) +
+  geom_point(aes(colour = Station))
+```
+
+
+```{r}
+ggplot(df_interpolated[76650:77000,], aes(x=datetime,y=Wind_dir_interp)) + 
+   geom_line(color = "red") +
+   geom_line(data = df[76650:77000,], color = "blue", mapping=aes(y=Wind_dir))
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
